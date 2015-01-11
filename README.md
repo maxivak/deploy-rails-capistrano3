@@ -6,8 +6,9 @@ Example of deploying Rails application to a Linux server with Nginx+Passenger.
 Find all necessary files in the repository and read about features below:
 
 * [Setup](#setup)
-* [Restart](#restart)
+* [Restart application](#restart)
   * [Restart Passenger](#restart-passenger)
+
 * [Linked files, dirs](#linked)
 * [Config files](#config_files)
 
@@ -51,8 +52,9 @@ config/deploy/staging.rb
 lib/capistrano/tasks          # directory
 ```
 
-## Setup
+
 <a name="setup"></a>
+## Setup
 
 Gemfile
 ```ruby
@@ -78,12 +80,12 @@ require 'capistrano/rails/migrations'
 ```
 
 
-## Restart server
 <a name="restart"></a>
+## Restart server
 
-### Passenger
+
 <a name="restart-passenger"></a>
-
+### Passenger
 
 Restart application after deploy:
 
@@ -108,9 +110,8 @@ cap production deploy:restart
 This gem provides more functionality on working with Passenger: https://github.com/capistrano/passenger
 
 
-## Linked files, dirs
 <a name="linked"></a>
-
+## Linked files, dirs
 
 Some of the files should be stored in shared folder and shared across all releases.
 File from the 'linked_files' list are symlinked to files in shared folder.
@@ -128,9 +129,8 @@ set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/
 Note! You need to copy linked files to the server before deploy _manually_. The files are not copied to the shared folder by Capistrano. 
 
 
-## Config files
 <a name="config_files"></a>
-
+## Config files
 
 Task to copy files to shared directory:
 
