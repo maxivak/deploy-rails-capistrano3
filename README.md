@@ -5,7 +5,22 @@ Example of deploying Rails application to a Linux server with Nginx+Passenger.
 
 Find all necessary files in the repository and read about features below:
 
-- [text here](#setup)
+* [Setup](#setup)
+* [Restart](#restart)
+** [Restart Passenger](#restart-passenger)
+* [Linked files, dirs](#linked)
+* [Config files](#config_files)
+
+* [Precompile assets](#assets-precompile)
+** [Precompile assets only if files were changed](#assets-precompile-changes)
+** [Precompile assets locally](#assets-precompile-locally)
+
+* [Show maintenance page while deploying](#maintenance-page)
+
+* [Delete old repos](#delete-old-repos)
+
+* [Deploy](#deploy)
+
 
 
 # Capistrano 3
@@ -64,9 +79,11 @@ require 'capistrano/rails/migrations'
 
 
 ## Restart server
-
+<a name="restart"></a>
 
 ### Passenger
+<a name="restart-passenger"></a>
+
 
 Restart application after deploy:
 
@@ -92,6 +109,8 @@ This gem provides more functionality on working with Passenger: https://github.c
 
 
 ## Linked files, dirs
+<a name="linked"></a>
+
 
 Some of the files should be stored in shared folder and shared across all releases.
 File from the 'linked_files' list are symlinked to files in shared folder.
@@ -110,6 +129,8 @@ Note! You need to copy linked files to the server before deploy _manually_. The 
 
 
 ## Config files
+<a name="config_files"></a>
+
 
 Task to copy files to shared directory:
 
@@ -150,7 +171,9 @@ cap production deploy:copy_config_files
 
 
 
+<a name="assets-precompile"></a>
 ## Precompile assets
+
 
 By default assets are precompiled every time during the deploy process.
 rake assets:precompile can take up a noticable amount of time of a deploy.
@@ -161,7 +184,9 @@ cap production deploy:assets:precompile
 ```
 
 
+<a name="assets-precompile-changes"></a>
 ### Precompile assets only after changes
+
 
 We will redefine default precompile task to check for changed files.
 Assets will be precompiled only if changes are detected in certain files or folders defined by variable :assets_dependencies.
@@ -227,6 +252,7 @@ https://coderwall.com/p/aridag/only-precompile-assets-when-necessary-rails-4-cap
 
 
 
+<a name="assets-precompile-locally"></a>
 ### Precompile assets locally
 
 Sometimes you may want to  precompile assets locally and upload them to the server.
@@ -336,6 +362,8 @@ end
 
 
 
+
+<a name="maintenance-page"></a>
 ## Maintenance page
 
 Use these tasks if you need to show a certain page on site to visitors while the app is updating:
@@ -433,6 +461,7 @@ server {
  
  
 
+<a name="delete-old-repos"></a>
 ## Delete old repos
 
 ```
@@ -442,6 +471,7 @@ Keep only several releases. Old releases will be deleted automatically after suc
 
 
 
+<a name="deploy"></a>
 ## Deploy
 
 ### Before deploy
@@ -466,7 +496,7 @@ cap <stage_name> deploy
 
 
 
-
+<a name="ref"></a>
 ## References
 
 Tutorials about deploy
