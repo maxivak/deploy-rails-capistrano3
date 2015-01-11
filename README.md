@@ -339,10 +339,16 @@ namespace :deploy do
 end
 ```
 
-Run the task:
+Run tasks :
 ```ruby
-cap production deploy:assets:precompile_locally
+
+cap production deploy:assets:precompile_locally_archive
+
+or 
+
+cap production deploy:assets:precompile_locally_copy
 ```
+
 
 To replace default precompile task with the new task:
 
@@ -352,8 +358,8 @@ namespace :deploy do
     desc "Precompile assets"
     task :precompile do
       on roles(:app) do
-        invoke 'deploy:assets:precompile_locally'
-        #Rake::Task["deploy:assets:precompile_locally"].invoke
+        invoke 'deploy:assets:precompile_locally_archive'
+        #Rake::Task["deploy:assets:precompile_locally_archive"].invoke
       end
     end    
   end  
@@ -393,6 +399,8 @@ The task will compile the template and put it in 'shared/public/system/maintenan
 
 Tasks:
 ```ruby
+
+# maintenance page
 namespace :deploy do
   namespace :web do
     desc <<-DESC
@@ -402,28 +410,33 @@ namespace :deploy do
 
     task :disable do
       on roles(:web) do
-        #require 'erb'
+        execute "rm #{shared_path}/system/maintenance.html" rescue nil
 
-        execute "rm #{shared_path}/system/maintenance.html"
-
+        require 'erb'
         reason = ENV['REASON']
         deadline = ENV['UNTIL']
         template = File.read('app/views/admin/maintenance.html.haml')
-        page = ERB.new(template).result(binding)
+        #page = ERB.new(template).result(binding)
+        content = ERB.new(template).result(binding)
 
-        put page, "#{shared_path}/system/maintenance.html", :mode => 0644
+        path = "public/system/maintenance.html"
+        File.open(path, "w") { |f| f.write content }
+
+        upload! path, "#{shared_path}/public/system/maintenance.html", :mode => 0644
       end
 
     end
 
     task :enable do
       on roles(:web) do
-        execute "rm #{shared_path}/system/maintenance.html"
+        execute "rm #{shared_path}/public/system/maintenance.html"
       end
     end
 
   end
 end
+
+```
 
 
 The solution was found here: http://stackoverflow.com/questions/2244263/capistrano-to-deploy-rails-application-how-to-handle-long-migrations.
@@ -442,7 +455,7 @@ Now we need to show this page on site. You need to modify settings on your web s
 
 ### Nginx
 
-If you use Nginx as a web server add this code to the server's configuration:
+If you have Nginx as a web server, add this code to the server's configuration:
 
 ```
 server {
@@ -454,7 +467,6 @@ server {
   if (-f $document_root/system/maintenance.html) {
     rewrite ^(.*)$ /system/maintenance.html break;
   }
-
 
 }
 ```
@@ -476,11 +488,11 @@ Keep only several releases. Old releases will be deleted automatically after suc
 
 ### Before deploy
 
+Run this command after you change your config files (like config/database.yml)
 ```
 cap production deploy:copy_config_files
 ```
 
-Run this command after you change your config files (like config/database.yml)
 
 ### Deploy
 
