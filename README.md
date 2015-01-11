@@ -7,13 +7,13 @@ Find all necessary files in the repository and read about features below:
 
 * [Setup](#setup)
 * [Restart](#restart)
-** [Restart Passenger](#restart-passenger)
+  * [Restart Passenger](#restart-passenger)
 * [Linked files, dirs](#linked)
 * [Config files](#config_files)
 
 * [Precompile assets](#assets-precompile)
-** [Precompile assets only if files were changed](#assets-precompile-changes)
-** [Precompile assets locally](#assets-precompile-locally)
+  * [Precompile assets only if files were changed](#assets-precompile-changes)
+  * [Precompile assets locally](#assets-precompile-locally)
 
 * [Show maintenance page while deploying](#maintenance-page)
 
