@@ -3,7 +3,9 @@ deploy rails app with capistrano3
 
 Example of deploying Rails application to a Linux server with Nginx+Passenger.
 
-Find the necessary files in the repository and read about features below.
+Find all necessary files in the repository and read about features below:
+
+- [text here](#setup)
 
 
 # Capistrano 3
@@ -35,6 +37,7 @@ lib/capistrano/tasks          # directory
 ```
 
 ## Setup
+<a name="setup"></a>
 
 Gemfile
 ```ruby
