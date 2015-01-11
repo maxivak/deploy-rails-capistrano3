@@ -1,9 +1,12 @@
-# Capistrano 3
+deploy rails app with capistrano3
+=======================
 
 Example of deploying Rails application to a Linux server with Nginx+Passenger.
 
 Find the necessary files in the repository and read about features below.
 
+
+# Capistrano 3
 
 ## Initialize Capistrano
 
