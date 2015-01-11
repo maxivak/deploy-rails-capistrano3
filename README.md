@@ -202,10 +202,11 @@ set :assets_dependencies, %w(app/assets lib/assets vendor/assets Gemfile config/
 Rake::Task["deploy:assets:precompile"].clear_actions
 class PrecompileRequired < StandardError; end
 
+
 namespace :deploy do
   namespace :assets do
-    desc "Precompile assets"
-    task :precompile do
+    desc "Precompile assets if changed"
+    task :precompile_changed do
       on roles(:app) do
         within release_path do
           with rails_env: fetch(:rails_env) do
@@ -224,6 +225,9 @@ namespace :deploy do
               execute(:ls, latest_release_path.join('assets_manifest_backup')) rescue raise(PrecompileRequired)
 
               fetch(:assets_dependencies).each do |dep|
+                #execute(:du, '-b', release_path.join(dep)) rescue raise(PrecompileRequired)
+                #execute(:du, '-b', latest_release_path.join(dep)) rescue raise(PrecompileRequired)
+
                 # execute raises if there is a diff
                 execute(:diff, '-Naur', release_path.join(dep), latest_release_path.join(dep)) rescue raise(PrecompileRequired)
               end
@@ -231,7 +235,7 @@ namespace :deploy do
               warn("-----Skipping asset precompile, no asset diff found")
 
               # copy over all of the assets from the last release
-              execute(:cp, '-r', latest_release_path.join('public', fetch(:assets_prefix)), release_path.join('public', fetch(:assets_prefix)))
+              execute(:cp, '-rf', latest_release_path.join('public', fetch(:assets_prefix)), release_path.join('public', fetch(:assets_prefix)))
 
             rescue PrecompileRequired
               warn("----Run assets precompile")
@@ -245,17 +249,35 @@ namespace :deploy do
   end
 end
 
+
 ```
 
 This solution was found in the post 
 https://coderwall.com/p/aridag/only-precompile-assets-when-necessary-rails-4-capistrano-3
 
 
+Use the new task instead of the default precompile task:
+
+```ruby
+namespace :deploy do
+  namespace :assets do
+    desc "Precompile assets if changed"
+    task :precompile do
+      on roles(:app) do
+        invoke 'deploy:assets:precompile_changed'
+        #Rake::Task["deploy:assets:precompile_changed"].invoke
+      end
+    end
+  end
+end
+
+```
+
 
 <a name="assets-precompile-locally"></a>
 ### Precompile assets locally
 
-Sometimes you may want to  precompile assets locally and upload them to the server.
+Sometimes you need to precompile assets locally and upload them to the server.
 
 Define a task to compile assets locally and copy them to the server. If your local machine is on Windows, make sure you have zip archiver (for example, 7zip).
 
@@ -501,9 +523,6 @@ cap production deploy
 
 cap <stage_name> deploy
 ```
-
-
-### Deploy without precompiling assets
 
 
 
