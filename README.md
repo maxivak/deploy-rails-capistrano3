@@ -7,8 +7,6 @@ Find all necessary files in the repository and read about features below:
 
 - [text here](#setup)
 
-- [text here](#Setup)
-
 
 # Capistrano 3
 
