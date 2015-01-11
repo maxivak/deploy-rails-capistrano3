@@ -5,6 +5,8 @@ Example of deploying Rails application to a Linux server with Nginx+Passenger.
 
 Find the necessary files in the repository and read about features below.
 
+- [text here](## Setup)
+
 
 # Capistrano 3
 
