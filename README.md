@@ -93,6 +93,8 @@ This gem provides more functionality on working with Passenger: https://github.c
 Some of the files should be stored in shared folder and shared across all releases.
 File from the 'linked_files' list are symlinked to files in shared folder.
 
+For example, you may want to store users' uploaded files in public/uploads directory. This directory should not new in each release after deploy.
+
 ```ruby
 set :linked_dirs, fetch(:linked_dirs, []).push('bin', 'log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')
 set :linked_dirs, fetch(:linked_dirs) + %w{public/uploads}
@@ -221,11 +223,13 @@ This solution was found in the post
 https://coderwall.com/p/aridag/only-precompile-assets-when-necessary-rails-4-capistrano-3
 
 
+
 ### Precompile assets locally
 
 Sometimes you may want to  precompile assets locally and upload them to the server.
 
 Define a task to compile assets locally and copy them to the server. If your local machine is on Windows, make sure you have zip archiver (for example, 7zip).
+
 
 ```ruby
 
@@ -238,7 +242,6 @@ namespace :deploy do
         run_locally do
           if RUBY_PLATFORM =~ /(win32)|(i386-mingw32)/
             execute 'del "tmp/assets.tar.gz"' rescue nil
-
             execute 'rd /S /Q "public/assets/"' rescue nil
 
             # precompile
@@ -247,23 +250,27 @@ namespace :deploy do
             end
             #execute "RAILS_ENV=#{rails_env} rake assets:precompile"
 
-
-
             # use 7zip to archive
             execute '7z a -ttar assets.tar public/assets/'
             execute '7z a -tgzip assets.tar.gz assets.tar'
             execute 'del assets.tar'
             execute 'move assets.tar.gz tmp/'
           else
+            execute 'rm tmp/assets.tar.gz' rescue nil
             execute 'rm -rf public/assets/*'
-            execute "RAILS_ENV=#{rails_env} rake assets:precompile"
+
+            with rails_env: fetch(:rails_env) do
+              execute 'rake assets:precompile'
+            end
+
             execute 'touch assets.tar.gz && rm assets.tar.gz'
-            execute  'tar zcvf assets.tar.gz public/assets/'
+            execute 'tar zcvf assets.tar.gz public/assets/'
             execute 'mv assets.tar.gz tmp/'
           end
         end
 
         # Upload precompiled assets
+        execute 'rm -rf public/assets/*'
         upload! "tmp/assets.tar.gz", "#{release_path}/assets.tar.gz"
         execute "cd #{release_path} && tar zxvf assets.tar.gz && rm assets.tar.gz"
       end
@@ -271,17 +278,19 @@ namespace :deploy do
 
   end
 end
+
 ```
 
-If you don't want to archive the assets before upload use this task which will copy folder /public/assets to the server file by file.
+
+
+If you don't want to archive the assets before upload, use this task which will copy folder /public/assets to the server file by file.
 
 ```ruby
-
 namespace :deploy do
   namespace :assets do
 
     desc 'Precompile assets locally and upload to server'
-    task :precompile_locally do
+    task :precompile_locally_copy do
       on roles(:app) do
         run_locally do
           with rails_env: fetch(:rails_env) do
@@ -291,6 +300,7 @@ namespace :deploy do
 
         execute "cd #{release_path} && mkdir public" rescue nil
         execute "cd #{release_path} && mkdir public/assets" rescue nil
+        execute 'rm -rf public/assets/*'
 
         upload! 'public/assets', "#{release_path}/public", recursive: true
 
@@ -321,8 +331,104 @@ namespace :deploy do
 end
 ```
 
+
+
 ## Maintenance page
 
+Use these tasks if you need to show a certain page on site to visitors while the app is updating:
+
+```ruby
+
+cap production deploy:web:enable 
+cap production deploy:web:disable
+
+```
+
+Create a page 'app/views/admin/maintenance.html.haml'
+```ruby
+<div style="width:100%;">
+<div style="width:900px; margin:0 auto;">
+  <h1>Site is offline for <%= reason ? reason : 'maintenance' %></h1>
+  <p>We're currently offline for <%= reason ? reason : 'maintenance' %> as of <%= Time.now.utc.strftime('%H:%M %Z') %>.</p>
+  <p>Sorry for the inconvenience.
+  <p>We'll be back <%= deadline ? "by #{deadline}" : 'shortly' %>.</p>
+
+</div></div>
+
+```
+
+The task will compile the template and put it in 'shared/public/system/maintenance.html'
+
+
+Tasks:
+```ruby
+namespace :deploy do
+  namespace :web do
+    desc <<-DESC
+      Present a maintenance page to visitors.
+        $ cap deploy:web:disable REASON="a hardware upgrade" UNTIL="12pm Central Time"
+    DESC
+
+    task :disable do
+      on roles(:web) do
+        #require 'erb'
+
+        execute "rm #{shared_path}/system/maintenance.html"
+
+        reason = ENV['REASON']
+        deadline = ENV['UNTIL']
+        template = File.read('app/views/admin/maintenance.html.haml')
+        page = ERB.new(template).result(binding)
+
+        put page, "#{shared_path}/system/maintenance.html", :mode => 0644
+      end
+
+    end
+
+    task :enable do
+      on roles(:web) do
+        execute "rm #{shared_path}/system/maintenance.html"
+      end
+    end
+
+  end
+end
+
+
+The solution was found here: http://stackoverflow.com/questions/2244263/capistrano-to-deploy-rails-application-how-to-handle-long-migrations.
+
+
+Run the tasks before and after deploy:
+
+```ruby
+before "deploy", "deploy:web:disable"
+after "deploy", "deploy:web:enable"
+```
+
+
+Now we need to show this page on site. You need to modify settings on your web server to use this maintenance page.
+
+
+### Nginx
+
+If you use Nginx as a web server add this code to the server's configuration:
+
+```
+server {
+  passenger_enabled on;
+
+  server_name yoursite.com;
+  ...
+
+  if (-f $document_root/system/maintenance.html) {
+    rewrite ^(.*)$ /system/maintenance.html break;
+  }
+
+
+}
+```
+ 
+ 
 
 ## Delete old repos
 
@@ -360,5 +466,6 @@ cap <stage_name> deploy
 
 ## References
 
+Tutorials about deploy
 * http://www.talkingquickly.co.uk/2014/01/deploying-rails-apps-to-a-vps-with-capistrano-v3/
 * http://vladigleba.com/blog/2014/04/04/deploying-rails-apps-part-5-configuring-capistrano/
