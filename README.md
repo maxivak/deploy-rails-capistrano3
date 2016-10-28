@@ -13,6 +13,7 @@ Find all necessary files in the repository and read about features below:
 * [Config files](#config_files)
 
 * [Precompile assets](#assets-precompile)
+  * [Skip precompile assets](#assets-precompile-skip)
   * [Precompile assets only if files were changed](#assets-precompile-changes)
   * [Precompile assets locally](#assets-precompile-locally)
 
@@ -181,6 +182,34 @@ rake assets:precompile can take up a noticable amount of time of a deploy.
 Run the task manually:
 ```
 cap production deploy:assets:precompile
+```
+
+
+<a name="assets-precompile-skip"></a>
+### Skip Precompile assets
+
+to skip assets precompilation during deploy add this line to deploy.rb:
+
+```
+Rake::Task["deploy:assets:precompile"].clear_actions
+```
+
+* if we want to skip it only sometimes, we can add env variable:
+
+```
+if ENV['skip_assets']=='1'
+  Rake::Task["deploy:assets:precompile"].clear_actions
+end
+```
+
+and run it as:
+```
+# this will skip precompilation
+
+skip_assets=1 cap production deploy
+
+# this will precompile assets
+cap production deploy
 ```
 
 
